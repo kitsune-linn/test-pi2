@@ -1,0 +1,2 @@
+s="erjgoerjgoeirjgoierioerig"
+print(s[:])
