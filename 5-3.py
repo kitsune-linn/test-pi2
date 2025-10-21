@@ -27,4 +27,4 @@ print("受電端電壓=", "{:.3f}".format(Vr))
 print("受電端電流=", "{:.3f}".format(abs(Ir)), ",", "pf=", "{:.6f}".format(pf)) 
 print("功率=", "{:.3f}".format(eta), "%")
 print("電壓調整率=", "{:.3f}".format(Vm), "%")
-# test comment
+# test comment 123123
