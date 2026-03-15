@@ -1,35 +1,31 @@
-/*
- * ESP-32 with ACS712 Current Sensor Test Program
- * ACS712 模組測試程式 (Arduino IDE 版本)
- * 
- * 接線說明 (Wiring):
- * - ACS712 VCC  -> ESP-32 5V (或 3.3V，視模組而定)
- * - ACS712 GND  -> ESP-32 GND  
- * - ACS712 OUT  -> ESP-32 GPIO34 (ADC1_CH6)
- * 
- * ACS712 型號規格:
- * - ACS712-05A: ±5A,  靈敏度 185mV/A
- * - ACS712-20A: ±20A, 靈敏度 100mV/A
- * - ACS712-30A: ±30A, 靈敏度 66mV/A
- * 
- * 使用說明:
- * 1. 在 Arduino IDE 中開啟此檔案
- * 2. 選擇開發板: ESP32 Dev Module
- * 3. 選擇正確的 COM Port
- * 4. 上傳程式到 ESP-32
- * 5. 開啟序列埠監控視窗 (115200 baud)
- */
+// ================================================================
+// ESP-32 + ACS712 電流感測器測試程式
+// ================================================================
+// 
+// 接線說明 (Wiring):
+// - ACS712 VCC  -> ESP-32 5V (或 3.3V，視模組而定)
+// - ACS712 GND  -> ESP-32 GND  
+// - ACS712 OUT  -> ESP-32 GPIO34 (ADC1_CH6)
+// 
+// ACS712 型號規格:
+// - ACS712-20A: ±20A, 靈敏度 100mV/A
+// 
+// 使用說明:
+// 1. 在 Arduino IDE 中開啟此檔案
+// 2. 選擇開發板: ESP32 Dev Module
+// 3. 選擇正確的 COM Port
+// 4. 上傳程式到 ESP-32
+// 5. 開啟序列埠監控視窗 (115200 baud)
+// ================================================================
 
 // ==================== 設定區 ====================
 #define ACS712_PIN 34           // ACS712 輸出腳位
-#define VREF 3.3               // 參考電壓 (V)
+#define VREF 5.0               // 參考電壓 (V)
 #define ADC_RESOLUTION 12      // ADC 解析度 (bits)
 #define ADC_MAX 4095           // ADC 最大值 (2^12 - 1)
 
-// 選擇 ACS712 型號 (取消註解其中一行)
-#define ACS712_05A             // ±5A,  靈敏度 185mV/A
-// #define ACS712_20A          // ±20A, 靈敏度 100mV/A
-// #define ACS712_30A          // ±30A, 靈敏度 66mV/A
+// 選擇 ACS712 型號 
+#define ACS712_20A          // ±20A, 靈敏度 100mV/A
 
 // 設定靈敏度
 #ifdef ACS712_05A
@@ -343,6 +339,7 @@ void testDetailed() {
 // ==================== 收集統計數據 ====================
 void collectStatistics() {
   float current = sensor.readCurrent(20);
+  
   readings[readingIndex] = current;
   
   Serial.print("[");
