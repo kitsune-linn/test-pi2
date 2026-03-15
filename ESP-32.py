@@ -157,6 +157,19 @@ float readings[30];
 int readingIndex = 0;
 bool collectingStats = false;
 
+// ==================== 輸出等級換算 ====================
+// 將電流(mA)分為 1~8 等級：範圍 -100~100，每級 25mA，超出範圍會夾到端點
+int currentToLevel(float current_mA) {
+  float clamped = current_mA;
+  if (clamped > 100.0) clamped = 100.0;
+  if (clamped < -100.0) clamped = -100.0;
+
+  int level = (int)((clamped + 100.0) / 25.0) + 1;
+  if (level < 1) level = 1;
+  if (level > 8) level = 8;
+  return level;
+}
+
 // ==================== setup() ====================
 void setup() {
   // 初始化序列埠
@@ -244,9 +257,9 @@ void showMenu() {
   Serial.println("\n========================================");
   Serial.println("請選擇測試模式:");
   Serial.println("========================================");
-  Serial.println("1. 基本測試 - 持續讀取電流 (mA, 僅數字輸出)");
-  Serial.println("2. 詳細測試 - 數值串流 (mA, 僅數字輸出)");
-  Serial.println("3. 統計測試 - 數據分析 (mA)");
+  Serial.println("1. 基本測試 - 輸出等級 1~8 (僅數字)");
+  Serial.println("2. 詳細測試 - 數值串流 + 等級 (僅數字)");
+  Serial.println("3. 統計測試 - 數據分析 (等級)");
   Serial.println("C. 重新校準");
   Serial.println("M. 顯示選單");
   Serial.println("========================================");
@@ -260,13 +273,13 @@ void handleInput(char input) {
   switch (input) {
     case '1':
       testMode = 1;
-      Serial.println("\n>>> 開始基本測試: 僅輸出 mA 數字 (按 0 停止)");
+      Serial.println("\n>>> 開始基本測試: 僅輸出等級 1~8 (按 0 停止)");
       Serial.println("----------------------------------------");
       break;
       
     case '2':
       testMode = 2;
-      Serial.println("\n>>> 開始詳細測試: 僅輸出數字 CSV (time_s,adc,voltage_v,current_mA) (按 0 停止)");
+      Serial.println("\n>>> 開始詳細測試: 僅輸出數字 CSV (time_s,adc,voltage_v,level) (按 0 停止)");
       Serial.println("----------------------------------------");
       break;
       
@@ -308,7 +321,8 @@ void handleInput(char input) {
 void testBasic() {
   float current = sensor.readCurrent(20);
   float current_mA = current * 1000.0;
-  Serial.println(current_mA, 1);
+  int level = currentToLevel(current_mA);
+  Serial.println(level);
 }
 
 // ==================== 詳細測試 ====================
@@ -317,6 +331,7 @@ void testDetailed() {
   float voltage = sensor.readVoltage();
   float current = sensor.readCurrent(20);
   float current_mA = current * 1000.0;
+  int level = currentToLevel(current_mA);
   
   float time_sec = millis() / 1000.0;
 
@@ -326,16 +341,17 @@ void testDetailed() {
   Serial.print(",");
   Serial.print(voltage, 4);
   Serial.print(",");
-  Serial.println(current_mA, 1);
+  Serial.println(level);
 }
 
 // ==================== 收集統計數據 ====================
 void collectStatistics() {
   float current = sensor.readCurrent(20);
   float current_mA = current * 1000.0;
+  int level = currentToLevel(current_mA);
   
   readings[readingIndex] = current;
-  Serial.println(current_mA, 1);
+  Serial.println(level);
   
   readingIndex++;
 }
@@ -356,12 +372,17 @@ void showStatistics() {
   float avgCurrent = sum / 30.0;
   float peakToPeak = maxCurrent - minCurrent;
 
-  // 僅輸出數字 (mA): avg,max,min,peak_to_peak
-  Serial.print(avgCurrent * 1000, 1);
+  int avgLevel = currentToLevel(avgCurrent * 1000.0);
+  int maxLevel = currentToLevel(maxCurrent * 1000.0);
+  int minLevel = currentToLevel(minCurrent * 1000.0);
+  int p2pLevel = currentToLevel(peakToPeak * 1000.0);
+
+  // 僅輸出數字 (level): avg,max,min,peak_to_peak
+  Serial.print(avgLevel);
   Serial.print(",");
-  Serial.print(maxCurrent * 1000, 1);
+  Serial.print(maxLevel);
   Serial.print(",");
-  Serial.print(minCurrent * 1000, 1);
+  Serial.print(minLevel);
   Serial.print(",");
-  Serial.println(peakToPeak * 1000, 1);
+  Serial.println(p2pLevel);
 }
