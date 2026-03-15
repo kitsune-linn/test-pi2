@@ -28,10 +28,10 @@
 #define ADC_MAX 4095           // ADC 最大值 (2^12 - 1)
 
 // Wi‑Fi / HTTP 設定
-const char* WIFI_SSID = "YOUR_WIFI_SSID";
-const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+const char* WIFI_SSID = "Ethanlin";
+const char* WIFI_PASSWORD = "00000000";
 // 請填入執行 simple_number_server.py 的電腦 IP，不可使用 localhost
-const char* SERVER_URL = "http://192.168.213.67:8001/number";
+const char* SERVER_URL = "http://172.20.10.2:8001/number";
 
 // 選擇 ACS712 型號 
 #define ACS712_20A          // ±20A, 靈敏度 100mV/A
