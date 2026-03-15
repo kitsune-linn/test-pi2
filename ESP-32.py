@@ -244,9 +244,9 @@ void showMenu() {
   Serial.println("\n========================================");
   Serial.println("請選擇測試模式:");
   Serial.println("========================================");
-  Serial.println("1. 基本測試 - 持續讀取電流");
-  Serial.println("2. 詳細測試 - 顯示完整資訊");
-  Serial.println("3. 統計測試 - 數據分析");
+  Serial.println("1. 基本測試 - 持續讀取電流 (mA, 僅數字輸出)");
+  Serial.println("2. 詳細測試 - 數值串流 (mA, 僅數字輸出)");
+  Serial.println("3. 統計測試 - 數據分析 (mA)");
   Serial.println("C. 重新校準");
   Serial.println("M. 顯示選單");
   Serial.println("========================================");
@@ -260,16 +260,14 @@ void handleInput(char input) {
   switch (input) {
     case '1':
       testMode = 1;
-      Serial.println("\n>>> 開始基本測試 (按 0 停止)");
+      Serial.println("\n>>> 開始基本測試: 僅輸出 mA 數字 (按 0 停止)");
       Serial.println("----------------------------------------");
       break;
       
     case '2':
       testMode = 2;
-      Serial.println("\n>>> 開始詳細測試 (按 0 停止)");
+      Serial.println("\n>>> 開始詳細測試: 僅輸出數字 CSV (time_s,adc,voltage_v,current_mA) (按 0 停止)");
       Serial.println("----------------------------------------");
-      Serial.println("時間(s)    ADC值  電壓(V)   電流(A)    電流(mA)");
-      Serial.println("------------------------------------------------------------");
       break;
       
     case '3':
@@ -309,12 +307,8 @@ void handleInput(char input) {
 // ==================== 基本測試 ====================
 void testBasic() {
   float current = sensor.readCurrent(20);
-  
-  Serial.print("電流: ");
-  Serial.print(current, 3);
-  Serial.print(" A  (");
-  Serial.print(current * 1000, 1);
-  Serial.println(" mA)");
+  float current_mA = current * 1000.0;
+  Serial.println(current_mA, 1);
 }
 
 // ==================== 詳細測試 ====================
@@ -322,31 +316,26 @@ void testDetailed() {
   int adcValue = sensor.readADC();
   float voltage = sensor.readVoltage();
   float current = sensor.readCurrent(20);
+  float current_mA = current * 1000.0;
   
   float time_sec = millis() / 1000.0;
-  
+
   Serial.print(time_sec, 2);
-  Serial.print("     ");
+  Serial.print(",");
   Serial.print(adcValue);
-  Serial.print("     ");
+  Serial.print(",");
   Serial.print(voltage, 4);
-  Serial.print("     ");
-  Serial.print(current, 3);
-  Serial.print("     ");
-  Serial.println(current * 1000, 1);
+  Serial.print(",");
+  Serial.println(current_mA, 1);
 }
 
 // ==================== 收集統計數據 ====================
 void collectStatistics() {
   float current = sensor.readCurrent(20);
+  float current_mA = current * 1000.0;
   
   readings[readingIndex] = current;
-  
-  Serial.print("[");
-  Serial.print(readingIndex + 1);
-  Serial.print("/30] 電流: ");
-  Serial.print(current, 3);
-  Serial.println(" A");
+  Serial.println(current_mA, 1);
   
   readingIndex++;
 }
@@ -366,35 +355,13 @@ void showStatistics() {
   
   float avgCurrent = sum / 30.0;
   float peakToPeak = maxCurrent - minCurrent;
-  
-  // 顯示結果
-  Serial.println("\n========================================");
-  Serial.println("統計結果:");
-  Serial.println("========================================");
-  
-  Serial.print("平均電流: ");
-  Serial.print(avgCurrent, 3);
-  Serial.print(" A (");
+
+  // 僅輸出數字 (mA): avg,max,min,peak_to_peak
   Serial.print(avgCurrent * 1000, 1);
-  Serial.println(" mA)");
-  
-  Serial.print("最大電流: ");
-  Serial.print(maxCurrent, 3);
-  Serial.print(" A (");
+  Serial.print(",");
   Serial.print(maxCurrent * 1000, 1);
-  Serial.println(" mA)");
-  
-  Serial.print("最小電流: ");
-  Serial.print(minCurrent, 3);
-  Serial.print(" A (");
+  Serial.print(",");
   Serial.print(minCurrent * 1000, 1);
-  Serial.println(" mA)");
-  
-  Serial.print("峰峰值:   ");
-  Serial.print(peakToPeak, 3);
-  Serial.print(" A (");
-  Serial.print(peakToPeak * 1000, 1);
-  Serial.println(" mA)");
-  
-  Serial.println("========================================");
+  Serial.print(",");
+  Serial.println(peakToPeak * 1000, 1);
 }
