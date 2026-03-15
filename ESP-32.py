@@ -18,11 +18,20 @@
 // 5. 開啟序列埠監控視窗 (115200 baud)
 // ================================================================
 
+#include <WiFi.h>
+#include <HTTPClient.h>
+
 // ==================== 設定區 ====================
 #define ACS712_PIN 34           // ACS712 輸出腳位
 #define VREF 5.0               // 參考電壓 (V)
 #define ADC_RESOLUTION 12      // ADC 解析度 (bits)
 #define ADC_MAX 4095           // ADC 最大值 (2^12 - 1)
+
+// Wi‑Fi / HTTP 設定
+const char* WIFI_SSID = "YOUR_WIFI_SSID";
+const char* WIFI_PASSWORD = "YOUR_WIFI_PASSWORD";
+// 請填入執行 simple_number_server.py 的電腦 IP，不可使用 localhost
+const char* SERVER_URL = "http://192.168.213.67:8001/number";
 
 // 選擇 ACS712 型號 
 #define ACS712_20A          // ±20A, 靈敏度 100mV/A
@@ -157,6 +166,42 @@ float readings[30];
 int readingIndex = 0;
 bool collectingStats = false;
 
+// ==================== 網路功能 ====================
+void connectWiFi() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
+
+  Serial.print("連線 Wi-Fi");
+  int retry = 0;
+  while (WiFi.status() != WL_CONNECTED && retry < 30) {
+    delay(500);
+    Serial.print(".");
+    retry++;
+  }
+  Serial.println();
+
+  if (WiFi.status() == WL_CONNECTED) {
+    Serial.print("Wi-Fi 已連線, IP: ");
+    Serial.println(WiFi.localIP());
+  } else {
+    Serial.println("Wi-Fi 連線失敗，HTTP 傳送將跳過");
+  }
+}
+
+void postLevel(int value, const char* source) {
+  if (WiFi.status() != WL_CONNECTED) {
+    return;
+  }
+
+  HTTPClient http;
+  http.begin(SERVER_URL);
+  http.addHeader("Content-Type", "application/json");
+
+  String payload = "{\"value\":" + String(value) + ",\"source\":\"" + String(source) + "\"}";
+  http.POST(payload);
+  http.end();
+}
+
 // ==================== 輸出等級換算 ====================
 // 將電流(mA)分為 1~8 等級：範圍 -100~100，每級 25mA，超出範圍會夾到端點
 int currentToLevel(float current_mA) {
@@ -197,6 +242,9 @@ void setup() {
   Serial.print(VREF);
   Serial.println(" V");
   Serial.println("========================================\n");
+
+  // 連線 Wi‑Fi
+  connectWiFi();
   
   // 自動校準
   Serial.println("5 秒後自動開始校準...");
@@ -323,6 +371,7 @@ void testBasic() {
   float current_mA = current * 1000.0;
   int level = currentToLevel(current_mA);
   Serial.println(level);
+  postLevel(level, "basic");
 }
 
 // ==================== 詳細測試 ====================
@@ -342,6 +391,7 @@ void testDetailed() {
   Serial.print(voltage, 4);
   Serial.print(",");
   Serial.println(level);
+  postLevel(level, "detailed");
 }
 
 // ==================== 收集統計數據 ====================
@@ -352,6 +402,7 @@ void collectStatistics() {
   
   readings[readingIndex] = current;
   Serial.println(level);
+  postLevel(level, "stats_sample");
   
   readingIndex++;
 }
@@ -385,4 +436,9 @@ void showStatistics() {
   Serial.print(minLevel);
   Serial.print(",");
   Serial.println(p2pLevel);
+
+  postLevel(avgLevel, "stats_avg");
+  postLevel(maxLevel, "stats_max");
+  postLevel(minLevel, "stats_min");
+  postLevel(p2pLevel, "stats_p2p");
 }
