@@ -9,8 +9,22 @@ PORT = 8001
 DATA_FILE = Path(__file__).with_name("simple_numbers.jsonl")
 
 
+def classify_value(value: float) -> str:
+    if 0 <= value <= 3:
+        return "off"
+    if 4 <= value <= 6:
+        return "running"
+    if 7 <= value <= 8:
+        return "spinning"
+    return "unknown"
+
+
 def save_record(value: float, source: str = "unknown") -> dict:
-    record = {"value": value}
+    record = {
+        "value": value,
+        "source": source,
+        "state": classify_value(value),
+    }
     with DATA_FILE.open("a", encoding="utf-8") as file:
         file.write(json.dumps(record, ensure_ascii=False) + "\n")
     return record
@@ -63,7 +77,16 @@ class NumberHandler(BaseHTTPRequestHandler):
             limit = int(query.get("limit", ["20"])[0])
             records = load_records(limit=limit)
             values = [r["value"] for r in records]
-            self._send_json(200, {"count": len(values), "values": values})
+            states = [r.get("state", classify_value(r["value"])) for r in records]
+            self._send_json(
+                200,
+                {
+                    "count": len(values),
+                    "values": values,
+                    "states": states,
+                    "records": records,
+                },
+            )
             return
 
         self._send_json(
